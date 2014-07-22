@@ -26,6 +26,7 @@
     "grunt": "0.4.x"
   },
   "scripts": {
+    "prepublish": "node node_modules/grunt-cli/bin/grunt",
     "test": "node node_modules/grunt-cli/bin/grunt test"
   },
   "keywords": [

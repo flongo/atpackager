@@ -35,19 +35,11 @@ module.exports = function (grunt) {
         },
 
         copy: {
-            docData: {
+            doc: {
                 files: [{
                     expand: true,
                     cwd: 'doc',
-                    src: ['**', '!**/*.md', '!**/*.html'],
-                    dest: 'dist/doc'
-                }]
-            },
-            docHtml: {
-                files: [{
-                    expand: true,
-                    cwd: 'doc',
-                    src: ['**/*.html'],
+                    src: ['**', '!**/*.md'],
                     dest: 'dist/doc'
                 }]
             }
@@ -75,5 +67,6 @@ module.exports = function (grunt) {
     });
 
     grunt.registerTask('test', ['jshint']);
-    grunt.registerTask('doc', ['copy:docData', 'copy:docHtml', 'markdown:doc']);
+    grunt.registerTask('doc', ['copy:doc', 'markdown:doc']);
+    grunt.registerTask('default', ['test', 'doc']);
 };

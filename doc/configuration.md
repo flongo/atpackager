@@ -1,3 +1,6 @@
+title: Configuration
+page: configuration
+---
 # A quick recap
 
 atpackager is built as a Grunt plugin and therefore expects it configuration to be passed using [`grunt.initConfig`](http://gruntjs.com/api/grunt.config#grunt.config.init) in the `Gruntfile.js` file.
