@@ -11,18 +11,18 @@ All builders can potentially expect a configuration object.
 
 # Built-in builders
 
-General purpose specific builders:
+General purpose builders:
 
-* [Copy files](#copy-files-copy)
-* [Concatenate files](#concatenate-files-concat)
+* [Copy files](#copy-files-copy-)
+* [Concatenate files](#concatenate-files-concat-)
 
 JavaScript specific builders:
 
-* [Concatenate JavaScript files](#concatenate-javascript-files-jsconcat)
+* [Concatenate JavaScript files](#concatenate-javascript-files-jsconcat-)
 
 Aria Templates specific builders:
 
-* [Create an Aria Templates multi-part file](#create-an-aria-templates-multi-part-file-atmultipart)
+* [Create an Aria Templates multi-part file](#create-an-aria-templates-multi-part-file-atmultipart-)
 
 
 
@@ -38,6 +38,7 @@ The copy of the content is done in two steps: first the content is retrieved fro
 1. content retrieved
 1. visitors: `onWriteOutputFile`
 1. content written
+
 
 
 
@@ -67,20 +68,21 @@ The parts of the content are queued before being actually written to the output 
 
 
 
+
 # Concatenate JavaScript files: `JSConcat`
 
 This builder works similarly to `Concat`, however the content is considered as JavaScript, allowing for more specific processing.
 
 The content is not represented as a string but rather as an AST, until the end when it is generated back to a string, applying the given options.
 
-Before the content is generated, it is possible to wrap the JavaScript code with JavaScript code as well: both each input file individually and the output file afterwards.
+Before the content is generated, it is possible to wrap it with some JavaScript code. This holds for each input file individually and also for the output file afterwards.
 
 ## Configuration
 
 * The options `outputEncoding`, `header` and `footer` are the same as for `Concat`
 * `jsOutputOptions`, [`Object`](http://devdocs.io/javascript/global_objects/object), defaults to `{beautify : true, ascii_only : true, comments : true}`: options to be passed to UglifyJS when converting the AST to a string.
 
-Wrappers, [`String`](http://devdocs.io/javascript/global_objects/string), default to `"$CONTENT$"` (content is not wrapped): this should be some JS code containing the special $CONTENT$ keyword which will be replaced by the content of the concerned file. Here are the possible wrappers:
+Wrappers, [`String`](http://devdocs.io/javascript/global_objects/string), default to `"$CONTENT$"` (the content is not wrapped): this should be some JS code containing the special `$CONTENT$` keyword which will be replaced by the content of the concerned file. Here are the possible wrappers:
 
 * `inputFileWrapper`: wrapper for each input file.
 * `outputFileWrapper`: wrapper for the output file.
@@ -134,3 +136,41 @@ where:
 * `{path}` is the logical path of the input file, with backslashes replaced by normal slashes
 
 For the full process, please refer to the `Concat` builder.
+
+
+
+# Create custom builders
+
+It is possible to create custom builders and use them in your packages configurations. As an example, you can take a look at the [custom builders created for noderJS](https://github.com/ariatemplates/noder-js/tree/master/build/builders).
+
+## How to declare a custom builder
+
+You simply need to create file `atpackager.js` __at the root of your project__ which looks like this
+
+```javascript
+module.exports = function(atpackager) {
+    require("./atpackager").init(atpackager);
+    atpackager.builders.MyFirstBuilder = require("./myBuilderPath/MyFirstBuilder");
+    atpackager.builders.MySecondBuilder = require("./myBuilderPath/MySecondBuilder");
+};
+```
+
+This is what we call a __plugin__ for atpackager. It is important that you put the plugin file at the root of your project if you want external projects to use the custom builders declared therein.
+Plugins allow you also to declare [custom visitors](./visitors.html#create-custom-visitors).
+
+
+## How to use a custom builder
+
+If you have created a custom builder and declared it in a plugin, you can use it within your project by loading the plugin
+
+```javascript
+require('atpackager').loadPlugin('./atpackager');
+```
+
+If you want to load atpackager plugins defined in a dependency (for example in [`noderJS`](http://noder-js.ariatemplates.com/)) in order to use the custom builders they declare, you can use
+
+```javascript
+require('atpackager').loadNpmPlugin('noder-js');
+```
+
+This will load plugin `atpackager.js` at the root of `noder-js` dependency.

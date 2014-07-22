@@ -3,12 +3,12 @@ page: visitors
 ---
 A visitor is a kind of hook, which implements some specific methods.
 
-Visitors can be instantiated with a custom configuration, and then added to a packaging. Afterwards, the packaging will call the specific methods on all its visitors at different steps of its process.
+Visitors can be instantiated with a custom configuration, and then added to a packaging. The packager will call the specific methods on all its visitors at different steps of its process.
 
 It implements the concept of _events_:
 
 * events names are equivalent to the implemented methods' names
-* adding a visitor is like registering to an event, with implemented methods indicating which events are subscribed
+* adding a visitor is like registering to a set of events, with implemented methods indicating the events the visitor wants to subscribe to
 * calling all visitors with a specific method is like emitting the corresponding event
 
 All visitors can potentially expect a configuration object.
@@ -17,20 +17,20 @@ __Important__:
 
 Most visitors accepts one or more patterns to filter files that they should process. This uses the concept of [glob patterns](http://gruntjs.com/api/grunt.file#globbing-patterns).
 
-Visitors processing single files will not do anything with a file that doesn't match the specified pattern. If no pattern was given, the usual default one is chosen so that it takes into account all files (`*/**`), or all files that are relevant (for instance, for visitors processing JavaScript files, the default pattern will filter regarding extensions, keeping `.js` ones).
+Visitors processing single files will not do anything with a file that doesn't match the specified pattern. If no pattern was given, the usual default one is chosen so that it takes into account all files (`**/*`), or all files that are relevant (for instance, for visitors processing JavaScript files, the default pattern will filter in only files with a `.js` extension).
 
-Therefore, __unless specified otherwise__, the above applies for configuration objects.
+__Unless specified otherwise__, the above applies to any visitor configuration.
 
 
 
 # Events/visitors' methods
 
-Each method corresponds to a specific event during the whole packaging build process.
+Each method corresponds to a specific event during the whole packaging process.
 
 Common schedule:
 
 1. `onInit` (when the packaging is initialized)
-1. `onAddSourceFile` (when a source file has just been added), `onAddOutputFile` (when an output file has just been added): at the loading of the configuration, and anytime something adds a new file. Visitors can indirectly trigger it at anytime, however it is more likely to happen during `onInit` for `onAddSourceFile`, and `onReachingBuildEnd` for `onAddOutputFile`.
+1. `onAddSourceFile` (when a source file has just been added), `onAddOutputFile` (when an output file has just been added): when loading of the configuration, and anytime a new file is added. Visitors can indirectly trigger it at anytime, however it is more likely to happen during `onInit` for `onAddSourceFile`, and `onReachingBuildEnd` for `onAddOutputFile`.
 1. `onBeforeBuild` (right before the packaging is going to be built), `onReachingBuildEnd` (when the build of the packaging doesn't have anymore output file to build): `onReachingBuildEnd` can be called multiple times in between, if the reacting visitors add additional output files to be built. The following nested level is applied for each output file making the packaging.
 	1. `computeDependencies`: called to compute the dependencies of an input file
 	1. `onBeforeOutputFileBuild` (right before an output file is going to be built): the following nested level is applied for each input file making the packaging.
@@ -45,34 +45,34 @@ Common schedule:
 
 General purpose (unless specified otherwise, input files filter's default value is `[**/*]`):
 
-* [Import a source file](#import-a-source-file-importsourcefile)
-* [Import a set of source files](#import-source-files-importsourcefiles)
-* [Insert a hash into the output file name](#insert-a-hash-into-the-output-file-name-hash)
-* [Check that all files have been packaged](#check-that-all-files-have-been-packaged-checkpackaged)
-* [Copy unpackaged files](#copy-unpackaged-files-copyunpackaged)
-* [Replace text in files](#replace-text-textreplace)
-* [Build a map of input files to output files](#build-a-map-of-input-files-to-output-files-map)
+* [Import a source file](#import-a-source-file-importsourcefile-)
+* [Import a set of source files](#import-source-files-importsourcefiles-)
+* [Insert a hash into the output file name](#insert-a-hash-into-the-output-file-name-hash-)
+* [Check that all files have been packaged](#check-that-all-files-have-been-packaged-checkpackaged-)
+* [Copy unpackaged files](#copy-unpackaged-files-copyunpackaged-)
+* [Replace text in files](#replace-text-textreplace-)
+* [Build a map of input files to output files](#build-a-map-of-input-files-to-output-files-map-)
 
 JavaScript (unless specified otherwise, input files filter's default value is `[**/*.js]`):
 
-* [Minify JavaScript files](#minify-a-javascript-file-jsminify)
-* [Check/add dependencies](#check-add-dependencies-checkdependencies)
-* [Check global variables use](#check-global-variables-use-checkglobals)
-* [Remove comment banners in JavaScript files](#remove-js-banner-jsstripbanner)
+* [Minify JavaScript files](#minify-a-javascript-file-jsminify-)
+* [Check/add dependencies](#check-add-dependencies-checkdependencies-)
+* [Check global variables use](#check-global-variables-use-checkglobals-)
+* [Remove comment banners in JavaScript files](#remove-js-banner-jsstripbanner-)
 
 Aria Templates (unless specified otherwise, input files filter's default value is `[**/*]`):
 
-* [Compile Atlas templates](#compile-atlas-templates-atcompiletemplates)
-* [Compute Aria Templates dependencies](#compute-aria-templates-dependencies-atdependencies)
-* [Remove Aria Templates documentation data](#remove-aria-templates-documentation-data-atremovedoc)
-* [Build an Aria Templates URL Map](#build-an-aria-templates-url-map-aturlmap)
-* [Normalize Aria Templates skin](#normalize-aria-templates-skin-atnormalizeskin)
+* [Compile Atlas templates](#compile-atlas-templates-atcompiletemplates-)
+* [Compute Aria Templates dependencies](#compute-aria-templates-dependencies-atdependencies-)
+* [Remove Aria Templates documentation data](#remove-aria-templates-documentation-data-atremovedoc-)
+* [Build an Aria Templates URL Map](#build-an-aria-templates-url-map-aturlmap-)
+* [Normalize Aria Templates skin](#normalize-aria-templates-skin-atnormalizeskin-)
 
 
 
 # Import a source file: `ImportSourceFile`
 
-Adds a source file to the packaging, regarding the given configuration.
+Adds a source file to the packaging, according to the given configuration.
 
 __When__: `onInit`
 
@@ -101,7 +101,7 @@ __When__: `onInit`
 
 ## Description
 
-File are imported from the given `sourceDirectory` and filtered with the given `patterns`, using [`grunt.file.expand`](http://gruntjs.com/api/grunt.file#grunt.file.expand).
+Files are imported from the given `sourceDirectory` and filtered with the given patterns, using [`grunt.file.expand`](http://gruntjs.com/api/grunt.file#grunt.file.expand).
 
 The rest is very similar to the visitor `ImportSourceFile`: `targetBaseLogicalPath` is used as the logical path for the imported files inside the packaging, while it can be different from the actual `sourceDirectory` which is used solely to retrieve the content of the files when needed.
 
@@ -109,7 +109,7 @@ The rest is very similar to the visitor `ImportSourceFile`: `targetBaseLogicalPa
 
 # Insert a hash into the output file name: `Hash`
 
-Inserts a hash into an output file's name, regarding the given pattern. The hash is computed with given options from the output file's content.
+Inserts a hash into an output file's name, according to the given pattern. The hash is computed with given options from the output file's content.
 
 __When__: `onAfterOutputFileBuild`
 
@@ -130,7 +130,7 @@ However, an additional hash method is supported: `"murmur3"`. For that, it uses 
 
 #### The pattern format
 
-The pattern defines the new basename of the file (which means, its whole folder path apart).
+The pattern defines the new basename of the file (excluding its folder path).
 
 In order to build the new one, you have three variables available:
 
@@ -148,9 +148,9 @@ The hash is computed either by the standard [`crypto`](http://devdocs.io/node/cr
 
 In the first case, the method [`createHash`](http://devdocs.io/node/crypto#crypto_crypto_createhash_algorithm) is used, and the value of the configuration property `hash` is passed as is.
 
-The second case occurs if the value of this property resolves to `"murmur3"`, __and has precedence__ (so if ever one day this is supported by Node.js, the npm package will still take care of it). In this case, the method `murmur3` is used.
+The second case occurs if the value of this property resolves to `"murmur3"`. In this case, the method `murmur3` is used.
 
-In both cases, the content of the file is given as is to compute the hash. This content is read using the utility [`grunt .file.read`](http://gruntjs.com/api/grunt.file#grunt.file.read), with an `encoding` set to [`null`](http://devdocs.io/javascript/global_objects/null): raw data is used, to be sure to have unique hashes regarding the actual content (binary) of the file.
+In both cases, the content of the file is given as is to compute the hash. This content is read using the utility [`grunt.file.read`](http://gruntjs.com/api/grunt.file#grunt.file.read), with an `encoding` set to [`null`](http://devdocs.io/javascript/global_objects/null): raw data is used, to be sure to have unique hashes regarding the actual content (binary) of the file.
 
 
 
@@ -182,7 +182,7 @@ __When__: `onReachingBuildEnd`
 
 Copy configuration:
 
-* `builder`, expects a builder configuration object, defaults to `{type: 'Copy'}` (the builder `Copy` without specific configuration): the builder configuration used to retrieve a builder to use to copy the files.
+* `builder`, expects a builder configuration object, defaults to `{type: 'Copy'}`: the builder to use in order to copy the files.
 * `renameFunction`, [`Function`](http://devdocs.io/javascript/global_objects/function), defaults to the identity function (it returns its first given argument, as is): a function used to rename the copied file.
 
 ## Description
@@ -197,7 +197,7 @@ What the visitor does however is only to create new output file instances, add t
 
 # Replace text: `TextReplace`
 
-Modifies the content of the given input file by applying the given replacements.
+Modifies the content of the given input files by applying the given replacements.
 
 __When__: `onWriteInputFile`
 
@@ -211,12 +211,12 @@ Replacement configuration:
 
 The replacement object:
 
-* `find`, [`String`](http://devdocs.io/javascript/global_objects/string), __required__: the pattern to find in the text and replace.
+* `find`, [`RegExp`](http://devdocs.io/javascript/global_objects/regexp), __required__: the pattern to find in the text and replace.
 * `replace`, [`String`](http://devdocs.io/javascript/global_objects/string), __required__: the replacement text.
 
 ## Description
 
-Replacements are done using the native [`replace`](http://devdocs.io/javascript/global_objects/string/replace) method of [`String`](http://devdocs.io/javascript/global_objects/string), passing `find` as first arguments and `replace` as second.
+Replacements are done using the native [`replace`](http://devdocs.io/javascript/global_objects/string/replace) method of [`String`](http://devdocs.io/javascript/global_objects/string), passing `find` as first argument and `replace` as second.
 
 
 
@@ -245,13 +245,11 @@ Map file configuration:
 
 A source file is not necessarily included in the map, it needs to satisfy the following conditions:
 
-* is is associated to an output file
-* its path matches given `sourceFiles` pattern
-* its associated output file's path matches given `outputFiles` pattern
+* it is associated to an output file
+* its path matches the given `sourceFiles` pattern
+* its associated output file's path matches the given `outputFiles` pattern.
 
-If the file is actually included, it is then added to the map. The paths used to make to key/value pair are normalized
-
-The normalization of the paths ensures that the separator used is the slash (`/`) character. It uses [`path.normalize`](http://devdocs.io/node/path#path_path_normalize_p) behind.
+If the file is actually included, it is then added to the map. The paths used to make to key/value pairs are normalized, which ensures that the separator used is the slash (`/`) character. It uses [`path.normalize`](http://devdocs.io/node/path#path_path_normalize_p) behind.
 
 Finally, it serializes the built map using standard [`JSON.stringify`](http://devdocs.io/javascript/global_objects/json/stringify) method without any further argument.
 
@@ -273,10 +271,10 @@ Files filtering:
 
 Minification configuration:
 
-* `skipJSConcatParts`, [`Boolean`](http://devdocs.io/javascript/global_objects/boolean), defaults to `true`: if `true`, will not process input files part of an output file built with the built-in builder `JSConcat`. Useful since this doesn't make much sense to minify each single part, but rather the resulting output file as whole.
-* `compress`, `false` or as expected by `UglifyJS.Compressor`, defaults to `{}` if value evaluates to `false`: the UglifyJS compressor configuration, used to compress the AST.
-* `mangle`, `false` or as expected by UglifyJS AST method `mangle_names`, defaults to `{}` if value evaluates to `false`: the name mangling configuration.
-* `output`, [`Object`](http://devdocs.io/javascript/global_objects/object) (see [below](#description)), defaults to `{ascii_only: true}` if value evaluates to `false`: the output options to customize the generation of a string from the AST.
+* `skipJSConcatParts`, [`Boolean`](http://devdocs.io/javascript/global_objects/boolean), defaults to `true`: if `true`, will not process input files part of an output file built with the built-in builder `JSConcat`. Useful since it doesn't make much sense to minify each single part, but rather the resulting output file as a whole.
+* `compress`, `false` or as expected by `UglifyJS.Compressor`: the UglifyJS compressor configuration, used to compress the AST. If set to `false`, no compression will be done, otherwise an instance of the `UglifyJS.Compressor` will be created with the provided value (which is set to `{}` if the value is different from an object).
+* `mangle`, `false` or as expected by UglifyJS AST method `mangle_names`: the name mangling configuration. If set to `false`, no mangling will be done, otherwise the mangling method will be created with the provided value (which is set to `{}` if the value is different from an object).
+* `output`, [`Object`](http://devdocs.io/javascript/global_objects/object) (see below), defaults to `{ascii_only: true}` if value evaluates to `false`: the output options to customize the generation of a string from the AST.
 
 `output` properties:
 
@@ -319,7 +317,7 @@ If the `mangle` configuration is not `false`, its computed value is forwarded to
 
 # Check/Add dependencies: `CheckDependencies`
 
-Checks/adds the dependencies of all the source files of a package. __This is necessary to have dependencies actually fetched__ (by the use of visitors implementing `computeDependencies`).
+Checks/adds the dependencies of all the source files of a package. The dependencies are computed by calling the `computeDependencies` method of any visitor implementing it.
 
 __When__: `onBeforeOutputFileBuild`
 
@@ -342,7 +340,7 @@ Ordering:
 
 For each source file making this package, the dependencies are processed. See section below to know about the dependencies processing of a single file.
 
-Once all dependencies have been processed, likely adding source files to the package, the work is over. However, is `reorderFiles` is `true`, the list of source files is put in the order in which dependencies have been encountered during the whole process.
+Once all dependencies have been processed, likely adding source files to the package, the work is over. However, if `reorderFiles` is `true`, the list of source files is put in the order in which dependencies have been encountered during the whole process.
 
 ### Single dependency processing
 
@@ -465,7 +463,6 @@ __When__: `onWriteInputFile`
 
 In addition to the given `files` filter, if the file does not correspond to an actual template (we determine it if we can't find an associated parser), the file won't be processed.
 
-It uses the content provider `ATCompiledTemplate` to compile the template and store the associated content, and also sets it as the default content provider of the file, so that this is the content that would be fetched.
 
 
 
@@ -492,7 +489,7 @@ Dependencies of the given input file are computed, and then actually specified a
 
 Note that dependencies must be part of the packaging already, either already added to it or present in its source directory.
 
-If a dependency could not be found, is not part of the specified `externalDependencies` and if `mustExist` is `true`, an error is logged then.
+If a dependency could not be found, is not part of the specified `externalDependencies` and if `mustExist` is `true`, then an error is logged.
 
 
 
@@ -500,7 +497,7 @@ If a dependency could not be found, is not part of the specified `externalDepend
 
 # Remove Aria Templates documentation data: `ATRemoveDoc`
 
-Removes chosen documentation data, with impact on runtime and/or package's size.
+Removes chosen documentation data, which has an impact on package's size.
 
 __When__: `onWriteInputFile`
 
@@ -510,8 +507,8 @@ __When__: `onWriteInputFile`
 
 Elements to remove:
 
-* `removeBeanDescription`, [`Boolean`](http://devdocs.io/javascript/global_objects/boolean), defaults to `true`: remove the description of properties in Bean definitions
-* `removeEventDescription`, [`Boolean`](http://devdocs.io/javascript/global_objects/boolean), defaults to `true`: remove the description of events in Aria object definitions
+* `removeBeanDescription`, [`Boolean`](http://devdocs.io/javascript/global_objects/boolean), defaults to `true`: remove the description of properties in Bean definitions.
+* `removeEventDescription`, [`Boolean`](http://devdocs.io/javascript/global_objects/boolean), defaults to `true`: remove the description of events in Aria object definitions.
 * `removeErrorStrings`, [`Boolean`](http://devdocs.io/javascript/global_objects/boolean), defaults to `false`: remove the error strings. __See description for details__.
 * `replaceStaticsInErrors`, [`Boolean`](http://devdocs.io/javascript/global_objects/boolean), defaults to `false`:  __see description for details__.
 
@@ -540,26 +537,26 @@ Files filtering:
 
 * `sourceFiles`: source files to take into account in the map
 * `outputFiles`: output files to take into account in the map
-* `onlyATMultipart`, interface: [`Boolean`](http://devdocs.io/javascript/global_objects/boolean), defaults to `true`: if `true`, only takes into account output files built with the `ATMultipart` builder.
+* `onlyATMultipart`: [`Boolean`](http://devdocs.io/javascript/global_objects/boolean), defaults to `true`: if `true`, only takes into account output files built with the `ATMultipart` builder.
 
 Output map file specifications:
 
 * `mapFile`, [`String`](http://devdocs.io/javascript/global_objects/string), defaults to `"map.js"`: name of the file into which the map should be output.
-* `mapFileEncoding`, [`String`](http://devdocs.io/javascript/global_objects/string), defaults to [`null`](http://devdocs.io/javascript/global_objects/null) (uses [`grunt.file.defaultEncoding`](http://gruntjs.com/api/grunt.file#grunt.file.defaultencoding) instead): the encoding of the file to which the map is output.
+* `mapFileEncoding`, [`String`](http://devdocs.io/javascript/global_objects/string), defaults to [`null`](http://devdocs.io/javascript/global_objects/null) (uses [`grunt.file.defaultEncoding`](http://gruntjs.com/api/grunt.file#grunt.file.defaultencoding) instead): the encoding of the file with which the map is output.
 * `outputDirectory`, [`String`](http://devdocs.io/javascript/global_objects/string), defaults to [`null`](http://devdocs.io/javascript/global_objects/null) (uses the packaging's directory instead): the directory of the map file.
 * `append`, [`Boolean`](http://devdocs.io/javascript/global_objects/boolean), defaults to `true`: if `true`, appends to the resolved map file if it exists, otherwise always creates a new one.
 
 Compression of the map/code:
 
-* `starCompress`, _glob pattern_, defaults to `["**/*"]` (all files): filters for files accepting to be star compressed (see full description for more about this concept).
-* `starStarCompress`, _glob pattern_, defaults to `["**/*"]` (all files): filters for files accepting to be star-star compressed (see full description for more about this concept).
+* `starCompress`, _glob pattern_, defaults to `["**/*"]` (all files): filters for files accepting to be star compressed (see the full description below for more about this concept).
+* `starStarCompress`, _glob pattern_, defaults to `["**/*"]` (all files): filters for files accepting to be star-star compressed (see the full description below for more about this concept).
 * `minifyJS`, [`Boolean`](http://devdocs.io/javascript/global_objects/boolean), defaults to `true`: if `true`, the generated code will be minified using `UglifyJS.minify` and the given/processed `minifyJSOptions`. Moreover.
 * `minifyJSOptions`, [`Object`](http://devdocs.io/javascript/global_objects/object) with specific properties (see below), defaults to `{}`: the processed options will always have at least the following properties: `{fromString: true}`.
 * `jsonIndent`, [`String`](http://devdocs.io/javascript/global_objects/string), defaults to _4 spaces_: the indentation string to use when serializing the map using [`JSON.stringify`](http://devdocs.io/javascript/global_objects/json/stringify). It is not relevant (unused) when `minifyJS` is `true`.
 
 ## Description
 
-For quick recap, an Aria Templates URL map maps classpaths to the actual file in which it is stored. Indeed, it allows to override the default behavior where one classpath corresponds exactly to one file path.
+For a quick recap, an Aria Templates URL map maps classpaths to the actual file in which corresponding files are stored. Indeed, it allows to override the default behavior where one classpath corresponds exactly to one file path.
 
 Example of such a map:
 
@@ -567,8 +564,8 @@ Example of such a map:
 {
 	"A": {
 		"B": {
-			"X": "XY.js",
-			"Y": "XY.js",
+			"X": "output/XY.js",
+			"Y": "output/XY.js",
 			"Z": "Z.js"
 		}
 	}
@@ -587,7 +584,7 @@ A given source file is added to the map only if it matches the following criteri
 1. `onlyATMultipart` is `false` or the file is used by the `ATMultipart` builder to build its associated output file
 1. it matches the given `sourceFiles` pattern
 1. its associated output file matches the given `outputFiles` pattern
-1. its associated output file's path is not equal to the given `mapFile` path (normalized)
+1. its associated output file's path is not equal to the given `mapFile` path (normalized).
 
 Once the map is built, if the given option `starCompress` evaluates to `true`, the star compression is applied, and afterwards star-star compression is applied if `starStarCompress` evaluates to `true`. See sections below for more information about these concepts.
 
@@ -611,7 +608,7 @@ With our previous example, this would give:
 {
 	"A": {
 		"B": {
-			"*": "XY.js",
+			"*": "output/XY.js",
 			"Z": "Z.js"
 		}
 	}
@@ -626,7 +623,7 @@ __Note that to avoid a base classpath to be compressed - which means to receive 
 
 The goal of star-star compression is the same: to gain some spaces in the map be grouping some entries.
 
-The difference here is that it spans across several hierarchy of modules. Given another example:
+The difference here is that it spans across several hierarchies of modules. Given another example:
 
 ```json
 {
@@ -670,3 +667,41 @@ __When__: `onWriteInputFile`
 First note that in addition to the given `files` filter, files who don't define an Aria class with a classpath corresponding to the skin ([`aria.widgets.AriaSkin`](http://ariatemplates.com/aria/guide/apps/apidocs/#aria.widgets.AriaSkin)) will be skipped as well.
 
 Then, it normalizes the skin definition using [`aria.widgets.AriaSkinNormalization.normalizeSkin`](http://ariatemplates.com/aria/guide/apps/apidocs/#aria.widgets.AriaSkinNormalization:normalizeSkin:method), replacing the content of the file if done with success, logging an error otherwise.
+
+
+
+
+# Create custom visitors
+
+It is possible to create custom visitors and use them in your atpackager configurations. As an example, you can take a look at the [custom visitors created for noderJS](https://github.com/ariatemplates/noder-js/tree/master/build/visitors).
+
+## How to declare a custom visitor
+
+You simply need to create file `atpackager.js` __at the root of your project__ which looks like this
+
+```javascript
+module.exports = function(atpackager) {
+    require("./atpackager").init(atpackager);
+    atpackager.visitors.MyFirstVisitor = require("./myVisitorsPath/MyFirstVisitor");
+    atpackager.visitors.MySecondVisitor = require("./myVisitorsPath/MySecondVisitor");
+};
+```
+
+This is what we call a __plugin__ for atpackager. It is important that you put the plugin file at the root of your project if you want external projects to use the custom visitors declared therein.
+Plugins allow you also to declare [custom builders](./builders.html#create-custom-builders).
+
+## How to use a custom visitor
+
+If you have created a custom visitor and declared it in a plugin, you can use it within your project by loading the plugin
+
+```javascript
+require('atpackager').loadPlugin('./atpackager');
+```
+
+If you want to load atpackager plugins defined in a dependency (for example in [`noderJS`](http://noder-js.ariatemplates.com/)) in order to use the custom visitors they declare, you can use
+
+```javascript
+require('atpackager').loadNpmPlugin('noder-js');
+```
+
+This will load plugin `atpackager.js` at the root of `noder-js` dependency.
